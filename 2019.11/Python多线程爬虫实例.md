@@ -104,8 +104,7 @@ for th in ths:
 更为 Pythonic 的方式是使用队列，10个人从一个队列里面取任务，执行完成后，程序终止。
 
 ```
-一点小tips
-deque 是线程安全的。勘误不是
+# 一点小tips
 deque.Queue 是线程安全的
 参考地址：https://juejin.im/post/5b129a1be51d45068a6c91d4
 deque 是双向队列
