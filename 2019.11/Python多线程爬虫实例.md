@@ -34,13 +34,7 @@
 
 在 Python（CPython）多线程中，当遇到遇到 I/O 请求时，当前线程会被挂起，等待任务状态完成时，线程调度会重启该线程。
 
-何为 I/O 操作？
-
-可以从三个角度来理解：
-
-
-
-参考：https://www.jianshu.com/p/fa7bdc4f3de7
+I/O 主要就是 网络请求和磁盘写入，关于更多的 I/O 信息，可自行学习。
 
 对于爬虫来讲，主要就是网络请求和数据写入。所以爬虫很适合用多线程来进行操作。
 
@@ -55,9 +49,15 @@ import threading
 import requests
 from lxml import etree
 
+# 这里可以换成别的地址 我的小服务器承受不了 Q_Q
 url = 'https://qixiangyang.cn/'
-headers = {'cookie': 'test_thread'}
+headers = {'cookie': 'in_article_for_test'}
+
+
 def get_data(index, x):
+    """
+    请求网络数据，并输出线程ID和任务ID
+    """
     res = requests.get(url, headers=headers)
     print('线程ID：{} 任务ID：{} 请求状态：{}'.format(index, x, res.status_code))
     # time.sleep(1)
@@ -65,6 +65,9 @@ def get_data(index, x):
 
 
 def get_title(index, text_info, x):
+    """
+    解析页面字段，并输出线程ID和任务ID 
+    """
     page_dom = etree.HTML(text_info)
     title_list = page_dom.xpath('/html/body/div/div/div[1]/div/h2/a/text()')
     print('线程ID：{} 任务ID：{} 结果：{}'.format(index, x, str(title_list)))
@@ -72,35 +75,44 @@ def get_title(index, text_info, x):
 
 
 def main(index, task_id_list_seg):
-
+    """
+    主函数，遍历10个任务，并携带任务ID
+    """
     for x in task_id_list_seg:
         text_info = get_data(index, x)
         get_title(index, text_info, x)
 
 
+# 朴素的想法来了，100个任务，10个任务，每个人分配10个任务。
+# 生成100个任务
 task_id_list = list(range(101, 200))
 seg = 10
 ths = []
 
+# 生成10个线程，每个线程携带各自的任务ID列表
 for _ in range(seg):
     th = threading.Thread(target=main, args=(_, task_id_list[_*seg: (_+1)*seg]))
     th.start()
     ths.append(th)
 
+# 生成10个线程，每个线程携带各自的任务ID列表
 for th in ths:
-    th.join()
+    th.join() # 主线程等待全部的子线程结束之后，主线程自身才结束，程序退出。
 ```
 
-"""
-对待爬取的url种子进行分片，然后每个线程取特定的分片里的数据。
-This is work, 但是需要更加 Pythonic 的方式。就是使用队列，。
+朴素的方式写完了，可以工作，但是也有点太朴素了，特别是分配任务这里，在边界部分很容易出错，且需要额外开销。
+更为 Pythonic 的方式是使用队列，10个人从一个队列里面取任务，执行完成后，程序终止。
+
+```
+一点小tips
 deque 是线程安全的。勘误不是
 deque.Queue 是线程安全的
 参考地址：https://juejin.im/post/5b129a1be51d45068a6c91d4
-deque 双向队列
+deque 是双向队列
 Queue 先进先出队列 FIFO
-"""
+```
 
+使用 deque.Queue 作为队列，具体的写法如下
 
 ```
 import threading
@@ -111,37 +123,50 @@ from queue import Queue
 
 
 class SpiderTest:
+
     url = 'https://qixiangyang.cn/'
-    headers = {'cookie': 'test_thread'}
+    headers = {'cookie': 'in_article_for_test'}
 
     def __init__(self, id_list, nums):
-        self.id_list = id_list
-        self.nums = nums
-        self.q = Queue(len(id_list))
+        self.id_list = id_list  # 任务ID列表
+        self.nums = nums  # 线程数量
+        self.q = Queue()  # 队列
 
     def get_url(self):
         for _ in self.id_list:
-            self.q.put(_)
+            self.q.put(_)  # 所有任务ID压入队列
 
     def get_data(self, index, x):
+        """
+        请求网络数据，并输出线程ID和任务ID
+        """
         res = requests.get(self.url, headers=self.headers)
         print('线程ID：{} 任务ID：{} 请求状态：{}'.format(index, x, res.status_code))
         return res.text
 
     @staticmethod
     def get_title(index, text_info, x):
+        """
+        解析页面字段，并输出线程ID和任务ID 
+        """
         page_dom = etree.HTML(text_info)
         title_list = page_dom.xpath('/html/body/div/div/div[1]/div/h2/a/text()')
         print('线程ID：{} 任务ID：{} 结果：{}'.format(index, x, str(title_list)))
         return title_list
 
     def get_info(self, t_num):
+        """
+        主函数 x 任务ID ， t_num线程ID
+        """
         while not self.q.empty():
             x = self.q.get()
             text_info = self.get_data(t_num, x)
             self.get_title(t_num, text_info, x)
 
     def run(self):
+        """
+        以多线程方式启动任务
+        """
         self.get_url()
         ths = []
         for _ in range(self.nums):
@@ -152,6 +177,7 @@ class SpiderTest:
             th.join()
 
 
+# 运行函数
 url_id = list(range(101, 200))
 a = SpiderTest(url_id, 20)
 a.run()
