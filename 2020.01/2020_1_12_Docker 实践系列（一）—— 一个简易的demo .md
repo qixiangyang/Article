@@ -128,7 +128,25 @@ services:
 
 解释：
 
+version： docker-compose 编排格式
+services：服务
+web： 服务名称
+build: 构建镜像，"."意思是通过本目录下的 Dockerfile 来构建
+ports: 镜像端口映射， 宿主机端口：容器端口
+volumes：挂载一个目录或者一个已存在的数据卷容器， 宿主机文件目录：容器文件目录
+depends_on：依赖镜像
+redis：redis 镜像
 
+步骤四：构建镜像并且运行
+
+```
+$ docker-compose up
+```
+
+打开浏览器，访问 http://localhost:5000 ， 可以看到 This Compose/Flask demo has been viewed 1 time(s). 的字样。
+镜像构建成功。
+
+至此，一个简单的基于 Docker 应用已经构建成功，下一篇，将整理一个完整应用的构建流程。
 
 案例参考：
 https://runnable.com/docker/python/docker-compose-with-flask-apps
