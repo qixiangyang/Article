@@ -32,18 +32,22 @@ https://www.cnblogs.com/terencezhou/p/10474617.html
 
 在接口开发中，有很多场景需要对请求的 Json 格式进行验证。
 
-使用 Json Schema Validator，即可以通过 Json Schema 文件来验证请求 Json 数据的合法性。
+在业务逻辑加入大量的数据验证的代码，会使得代码部分有很多额外的工作。
 
-避免在代码中，出现大量数据验证的逻辑。将数据验证逻辑与业务逻辑解耦，有助于开发者写出更清晰、更易维护的代码。
+这时候就可以将数据验证的工作交给 Json Schema Validator， 由他来统一验证请求数据格式的合法性。
+
+这样做的好处是，将数据验证逻辑与业务逻辑解耦，有助于开发者写出更清晰、更易维护的代码。
+
+使用 Json Schema，必须会它的格式，下面就是对它介绍。
 
 
 ### 怎么写 Json Schema 文件？
 
-一、 Json Schema 初体验
+整体来看，Json Schema 就是一个嵌套的 Json。
 
-整体来看，Json Schema 是一个嵌套的 Json。他是通过分层来进行描述的。
+他是通过分层来进行描述数据格式的。在每一层，Json Schema 相对于原始的 Json 都会多一层描述性内容。
 
-在每一层，Json Schema 相对于原始的 Json 都会多一层描述性内容。
+在这些描述行文件中，可以对数据的格式作出限制
 
 来看一个简单的例子：
 
@@ -72,6 +76,8 @@ https://www.cnblogs.com/terencezhou/p/10474617.html
 对于者两个属性，由分别进行了定义，其中 city 的数据类型是 string，number 的类型为 number。
 
 所以看起来 Json Schema 相比于原始的 Json 就是多了一层描述，并在 properties 中具体描述字段属性。
+
+当让，描述性的字段，不仅仅是 properties， 还有一些其他字段，比如 required 等，后面再介绍。
 
 在来看一个嵌套 Json 的例子：
 
@@ -105,7 +111,7 @@ https://www.cnblogs.com/terencezhou/p/10474617.html
 
 在这个例子中， user 是一个嵌套的 Json 对象。
 
-跟前面的表述一样，对于这个对象，对多一层描述，然后在 properties 中 描述具体的数据类型。
+跟前面的表述一样，对于 user 这个对象，多一层描述，然后在 properties 中，描述了具体的数据类型。
 
 再来看一个 array 的类型的例子：
 
@@ -142,5 +148,27 @@ https://www.cnblogs.com/terencezhou/p/10474617.html
 
 ```
 
+在这个例子中，user 变成了一个 array 对象，它用来存放 object 对象。
+
+同理根据 Json Schema 的规则，在每一层都对这些数据格式进行了描述。
+
+这篇文章，主要是对 Json Schema 进行介绍，后面会有一篇文章专门介绍复杂的 Json Schema 写法。
 
 ### Python 中怎么使用 Json Schema Validator？
+
+在 Python 中可以使用 jsonschema 包进行 Json 格式对验证。
+
+以下代码是在 flask 中对 request 的 json 进行验证的 demo，请参考。
+
+```
+from jsonschema import validate
+
+def parse_json(schema: dict) -> dict:
+    body = flask.request.get_json(force=True)
+    try:
+        jsonschema.validate(body, schema)
+    except Exception as e:
+        raise ClientError(message="invalid json :[{0}].".format(repr(e)))
+    else:
+        return body
+```
