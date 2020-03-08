@@ -65,5 +65,82 @@ https://www.cnblogs.com/terencezhou/p/10474617.html
 }
 ```
 
+可以看到，在 Schema 中，最外层先定义了这是一个 object 对象。 
+
+然后通过 properties 定义了这个对象的属性，分别是 city 和 number。
+
+对于者两个属性，由分别进行了定义，其中 city 的数据类型是 string，number 的类型为 number。
+
+所以看起来 Json Schema 相比于原始的 Json 就是多了一层描述，并在 properties 中具体描述字段属性。
+
+在来看一个嵌套 Json 的例子：
+
+```
+# 原始 Json
+{
+    "city" : "chicago", 
+    "number": 20, 
+    "user" : {
+        "name":"Alex", 
+        "age":20
+        }
+}
+
+# Json Schema
+{ 
+    "type": "object",
+    "properties": {
+        "city": { "type": "string" },
+        "number": { "type": "number" },
+        "user": { 
+            "type": "object",
+            "properties": {
+                "name" : {"type": "string"},
+                "age" : {"type": "number"}
+            }                       
+        }
+    }
+}
+```
+
+在这个例子中， user 是一个嵌套的 Json 对象。
+
+跟前面的表述一样，对于这个对象，对多一层描述，然后在 properties 中 描述具体的数据类型。
+
+再来看一个 array 的类型的例子：
+
+
+```
+# 原始 Json
+{
+    "city": "chicago",
+    "number": 20,
+    "user": [
+        {"name": "dick"},
+        {"name": "eric"}
+    ]
+
+}
+# Json Schema
+{
+    "type": "object",
+    "properties": {
+        "city": {"type": "string"},
+        "number": {"type": "number"},
+        "user": {
+            "type": "array",
+            "items": [
+                {"type": "object",
+                 "properties": {
+                     "name": {"type": "string"}
+                 }
+                 }
+            ]
+        }
+    }
+}
+
+```
+
 
 ### Python 中怎么使用 Json Schema Validator？
